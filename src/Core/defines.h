@@ -1,0 +1,2 @@
+
+#define CPU_ADDRESS_SPACE 0xFFFF
