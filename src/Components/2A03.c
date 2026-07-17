@@ -1,5 +1,6 @@
 #include "2A03.h"
 
+#include <string.h>
 
 bool init_cpu(_2A03CPU* cpu)
 {
@@ -14,6 +15,25 @@ bool init_cpu(_2A03CPU* cpu)
     memset(cpu->bus->ram, 'A', 0x0800);
 
     return true;
+}
+
+bool cpu_reset(_2A03CPU* cpu)
+{
+
+}
+
+void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value)
+{
+    if (value) {
+        cpu->P |= flag;
+    }else {
+        cpu->P &= flag;
+    }
+}
+
+bool get_flag(_2A03CPU* cpu, CPUFlag flag)
+{
+    return ((cpu->P & flag) != 0);
 }
 
 uint8_t cpu_read(_2A03CPU* cpu, uint16_t addr) {
