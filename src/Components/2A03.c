@@ -12,14 +12,27 @@ bool init_cpu(_2A03CPU* cpu)
     cpu->SP = 0;
 
     cpu->bus = malloc(sizeof(memory_bus));
-    memset(cpu->bus->ram, 'A', 0x0800);
+    if (!cpu->bus)
+        return false;
+
+    memset(cpu->bus->ram, 0, 0x0800);
+
+    reset_cpu(cpu);
 
     return true;
 }
 
-bool cpu_reset(_2A03CPU* cpu)
+void reset_cpu(_2A03CPU* cpu)
 {
+    cpu->SP -= 3;
 
+    set_flag(cpu, FLAG_U, true);
+    set_flag(cpu, FLAG_I, true);
+
+    uint8_t lo = cpu_read(cpu, 0xFFFC);
+    uint8_t hi = cpu_read(cpu, 0xFFFD);
+    cpu->PC = (uint16_t)(hi << 8) | lo;
+    
 }
 
 void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value)

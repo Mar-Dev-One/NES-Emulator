@@ -25,10 +25,30 @@ typedef struct _2A03CPU
 
 } _2A03CPU;
 
+typedef enum CPUFlag
+{
+    FLAG_C = (1 << 0),
+    FLAG_Z = (1 << 1),
+    FLAG_I = (1 << 2),
+    FLAG_D = (1 << 3),
+    FLAG_B = (1 << 4),
+    FLAG_U = (1 << 5),
+    FLAG_V = (1 << 6),
+    FLAG_N = (1 << 7)
+
+} CPUFlag;
+
 
 bool init_cpu(_2A03CPU* cpu);
 
+
+bool cpu_reset(_2A03CPU* cpu);
+
+void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value);
+bool get_flag(_2A03CPU* cpu, CPUFlag flag);
+
 uint8_t cpu_read(_2A03CPU* cpu, uint16_t addr);
 void cpu_write(_2A03CPU* cpu, uint16_t addr, uint8_t value);
+
 
 void destroy_cpu(_2A03CPU* cpu);
