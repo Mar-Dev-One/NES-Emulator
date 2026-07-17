@@ -7,6 +7,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_executable(NESEmulator
     src/main.c
+    src/Components/2A03.c
+    src/Components/memory_bus.c
 )
 
 #target_link_libraries(NESEmulator PRIVATE
