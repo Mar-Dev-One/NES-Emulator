@@ -21,9 +21,27 @@ bool INIT_NES(NES* nes)
     return true;
 }
 
+/* NTSC 2A03 runs at ~1.789773 MHz; NTSC frames land at ~60.0988 Hz.
+   That works out to ~29780.5 CPU cycles per frame. Real hardware
+   doesn't run in whole-frame chunks like this -- the CPU, PPU, and APU
+   are all clocked together, cycle by cycle, with the PPU running 3x
+   the CPU's rate. This constant is a stand-in until the PPU/APU exist
+   and everything is driven from one shared clock. */
+#define CPU_CYCLES_PER_FRAME 29781
+
 bool ON_UPDATE_NES(NES* nes)
 {
-    /* TODO: step the CPU one instruction / clock the PPU & APU. */
+    if (!nes || !nes->cpu)
+        return false;
+
+    for (int i = 0; i < CPU_CYCLES_PER_FRAME; i++) {
+        if (!cpu_clock(nes->cpu))
+            return false;
+
+        /* TODO: clock the PPU 3x per CPU cycle and the APU once per
+           CPU cycle here, once those components exist. */
+    }
+
     return true;
 }
 
