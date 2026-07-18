@@ -42,7 +42,7 @@ typedef enum CPUFlag
 bool init_cpu(_2A03CPU* cpu);
 
 
-bool cpu_reset(_2A03CPU* cpu);
+bool reset_cpu(_2A03CPU* cpu);
 
 void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value);
 bool get_flag(_2A03CPU* cpu, CPUFlag flag);
