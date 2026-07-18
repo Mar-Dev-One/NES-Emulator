@@ -42,7 +42,7 @@ typedef enum CPUFlag
 bool init_cpu(_2A03CPU* cpu);
 
 
-bool reset_cpu(_2A03CPU* cpu);
+void reset_cpu(_2A03CPU* cpu);
 
 void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value);
 bool get_flag(_2A03CPU* cpu, CPUFlag flag);
@@ -50,5 +50,10 @@ bool get_flag(_2A03CPU* cpu, CPUFlag flag);
 uint8_t cpu_read(_2A03CPU* cpu, uint16_t addr);
 void cpu_write(_2A03CPU* cpu, uint16_t addr, uint8_t value);
 
+/* Advances the CPU by one clock cycle. If the current instruction has
+   finished, fetches and begins executing the next opcode. Returns true
+   on every cycle (reserved for future use, e.g. signalling a fault on
+   an illegal opcode). */
+bool cpu_clock(_2A03CPU* cpu);
 
 void destroy_cpu(_2A03CPU* cpu);

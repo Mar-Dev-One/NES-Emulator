@@ -40,7 +40,7 @@ void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value)
     if (value) {
         cpu->P |= flag;
     }else {
-        cpu->P &= flag;
+        cpu->P &= ~flag;
     }
 }
 
