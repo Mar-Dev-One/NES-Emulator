@@ -11,7 +11,7 @@ int main(void)
         printf("The cpu have not been initilized!");
 
     printf("The cpu have been initilized!\n");
-    printf("%d\n", sizeof(memory_bus));
+    printf("%zu\n", sizeof(memory_bus));
 
     printf("mem : %c\n", cpu_read(&maincpu, 0x0000));
     printf("mem : %c\n", cpu_read(&maincpu, 0x0001));
