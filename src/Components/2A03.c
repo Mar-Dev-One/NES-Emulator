@@ -23,8 +23,15 @@ bool init_cpu(_2A03CPU* cpu)
         return false;
 
     memset(cpu->bus->ram, 0, 0x0800);
+    cpu->bus->cart = NULL;
 
-    reset_cpu(cpu);
+    /* Deliberately NOT calling reset_cpu() here: it reads the reset
+       vector from cartridge space, which isn't mapped in yet at this
+       point. The caller resets explicitly once a cartridge is
+       attached (see NES_LOAD_CARTRIDGE), so the CPU only ever resets
+       once with real data behind it -- reset_cpu decrements SP
+       relative to its current value, so resetting twice would leave
+       SP wrong. */
 
     return true;
 }
@@ -39,8 +46,6 @@ bool reset_cpu(_2A03CPU* cpu)
     uint8_t lo = cpu_read(cpu, 0xFFFC);
     uint8_t hi = cpu_read(cpu, 0xFFFD);
     cpu->PC = (uint16_t)(hi << 8) | lo;
-
-    return true;
     
 }
 

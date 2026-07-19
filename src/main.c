@@ -1,31 +1,34 @@
 #include <stdio.h>
 
-#include "Components/2A03.h"
-#include "Components/memory_bus.h"
+#include "Components/NES.h"
 
-int main(void)
+int main(int argc, char** argv)
 {
-    _2A03CPU maincpu;
+    const char* rom_path = argc > 1 ? argv[1] : "C:\\Dev\\My\\NES-Emulator\\ROMs\\nestest.nes";
 
-    if (!init_cpu(&maincpu))
-        printf("The cpu have not been initilized!");
+    NES nes;
+    if (!INIT_NES(&nes)) {
+        fprintf(stderr, "Failed to initialize NES\n");
+        return 1;
+    }
 
-    printf("The cpu have been initilized!\n");
-    printf("%zu\n", sizeof(memory_bus));
+    if (!NES_LOAD_CARTRIDGE(&nes, rom_path)) {
+        fprintf(stderr, "Failed to load cartridge '%s'\n", rom_path);
+        DESTROY_NES(&nes);
+        return 1;
+    }
 
-    printf("mem : %c\n", cpu_read(&maincpu, 0x0000));
-    printf("mem : %c\n", cpu_read(&maincpu, 0x0001));
+    printf("NES powered on. Reset vector -> PC=0x%04X\n", nes.cpu->PC);
 
-    cpu_write(&maincpu, 0x0000, 'Q');
-    cpu_write(&maincpu, 0x0001, 'E');
+    if (!ON_UPDATE_NES(&nes)) {
+        fprintf(stderr, "Frame update failed\n");
+        DESTROY_NES(&nes);
+        return 1;
+    }
 
-    printf("mem : %c\n", cpu_read(&maincpu, 0x0000));
-    printf("mem : %c\n", cpu_read(&maincpu, 0x0001));
+    //printf("Ran one frame (~29781 CPU cycles). PC=0x%04X A=0x%02X X=0x%02X Y=0x%02X SP=0x%02X\n",
+    //       nes.cpu->PC, nes.cpu->Accumulator, nes.cpu->X, nes.cpu->Y, nes.cpu->SP);
 
-    printf("%p\n", maincpu.bus->ram);
-
-    
-
-    destroy_cpu(&maincpu);
+    DESTROY_NES(&nes);
     return 0;
 }
