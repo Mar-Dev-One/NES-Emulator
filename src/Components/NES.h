@@ -15,6 +15,6 @@ typedef struct NES
 
 bool INIT_NES(NES* NES);
 
-bool ON_UPDATE_NES();
+bool ON_UPDATE_NES(NES* nes);
 
 void DESTROY_NES(NES* NES);

@@ -29,7 +29,7 @@ bool init_cpu(_2A03CPU* cpu)
     return true;
 }
 
-void reset_cpu(_2A03CPU* cpu)
+bool reset_cpu(_2A03CPU* cpu)
 {
     cpu->SP -= 3;
 
@@ -39,6 +39,8 @@ void reset_cpu(_2A03CPU* cpu)
     uint8_t lo = cpu_read(cpu, 0xFFFC);
     uint8_t hi = cpu_read(cpu, 0xFFFD);
     cpu->PC = (uint16_t)(hi << 8) | lo;
+
+    return true;
     
 }
 
