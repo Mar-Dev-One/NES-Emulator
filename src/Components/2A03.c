@@ -12,6 +12,12 @@ bool init_cpu(_2A03CPU* cpu)
     cpu->PC = 0;
     cpu->SP = 0;
 
+    cpu->cycles_remaining = 0;
+    cpu->opcode = 0;
+    cpu->addr_abs = 0;
+    cpu->addr_rel = 0;
+    cpu->fetched = 0;
+
     cpu->bus = malloc(sizeof(memory_bus));
     if (!cpu->bus)
         return false;
@@ -41,7 +47,7 @@ void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value)
     if (value) {
         cpu->P |= flag;
     }else {
-        cpu->P &= flag;
+        cpu->P &= ~flag;
     }
 }
 

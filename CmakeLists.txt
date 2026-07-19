@@ -10,6 +10,7 @@ add_executable(NESEmulator
     src/Components/2A03.c
     src/Components/Instructions.c
     src/Components/memory_bus.c
+    src/Components/NES.c
 )
 
 #target_link_libraries(NESEmulator PRIVATE
