@@ -38,15 +38,22 @@ bool init_cpu(_2A03CPU* cpu)
 
 bool reset_cpu(_2A03CPU* cpu)
 {
-    cpu->SP -= 3;
+    cpu_read(cpu, cpu->PC);                       /* cycle 1: dummy opcode fetch */
+    cpu_read(cpu, cpu->PC);                       /* cycle 2: dummy operand fetch, PC not advanced */
+
+    cpu_read(cpu, 0x0100 + cpu->SP); cpu->SP--;   /* cycle 3: phantom push PCH (no write) */
+    cpu_read(cpu, 0x0100 + cpu->SP); cpu->SP--;   /* cycle 4: phantom push PCL (no write) */
+    cpu_read(cpu, 0x0100 + cpu->SP); cpu->SP--;   /* cycle 5: phantom push P (no write) */
 
     set_flag(cpu, FLAG_U, true);
     set_flag(cpu, FLAG_I, true);
 
-    uint8_t lo = cpu_read(cpu, 0xFFFC);
-    uint8_t hi = cpu_read(cpu, 0xFFFD);
+    uint8_t lo = cpu_read(cpu, 0xFFFC);           /* cycle 6 */
+    uint8_t hi = cpu_read(cpu, 0xFFFD);           /* cycle 7 */
+
     cpu->PC = (uint16_t)(hi << 8) | lo;
-    
+
+    return true;
 }
 
 void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value)
