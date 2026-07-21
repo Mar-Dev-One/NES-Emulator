@@ -18,6 +18,9 @@ bool init_cpu(_2A03CPU* cpu)
     cpu->addr_rel = 0;
     cpu->fetched = 0;
 
+    cpu->nmi_pending = false;
+    cpu->irq_line = false;
+
     cpu->bus = malloc(sizeof(memory_bus));
     if (!cpu->bus)
         return false;
@@ -38,6 +41,9 @@ bool init_cpu(_2A03CPU* cpu)
 
 bool reset_cpu(_2A03CPU* cpu)
 {
+    cpu->nmi_pending = false;
+    cpu->irq_line = false;
+
     cpu_read(cpu, cpu->PC);                       /* cycle 1: dummy opcode fetch */
     cpu_read(cpu, cpu->PC);                       /* cycle 2: dummy operand fetch, PC not advanced */
 
@@ -55,6 +61,53 @@ bool reset_cpu(_2A03CPU* cpu)
 
     return true;
 }
+
+/* Both IRQ and NMI push PC (high byte first, then low), then P with
+   B cleared and U set, set FLAG_I so the handler isn't itself
+   interrupted, then load PC from the interrupt's vector. The only
+   differences are: IRQ checks FLAG_I first and can be skipped, IRQ
+   uses $FFFE/$FFFF vs NMI's $FFFA/$FFFB, and the cycle count (7 vs 8). */
+
+bool irq_cpu(_2A03CPU* cpu)
+{
+    if (get_flag(cpu, FLAG_I))
+        return false;   /* masked -- caller falls back to normal fetch */
+
+    stack_push(cpu, (cpu->PC >> 8) & 0x00FF);
+    stack_push(cpu, cpu->PC & 0x00FF);
+
+    set_flag(cpu, FLAG_B, false);
+    set_flag(cpu, FLAG_U, true);
+    set_flag(cpu, FLAG_I, true);
+    stack_push(cpu, cpu->P);
+
+    uint8_t lo = cpu_read(cpu, 0xFFFE);
+    uint8_t hi = cpu_read(cpu, 0xFFFF);
+    cpu->PC = (uint16_t)(hi << 8) | lo;
+
+    cpu->cycles_remaining = 7;
+    return true;
+}
+
+void nmi_cpu(_2A03CPU* cpu)
+{
+    stack_push(cpu, (cpu->PC >> 8) & 0x00FF);
+    stack_push(cpu, cpu->PC & 0x00FF);
+
+    set_flag(cpu, FLAG_B, false);
+    set_flag(cpu, FLAG_U, true);
+    set_flag(cpu, FLAG_I, true);
+    stack_push(cpu, cpu->P);
+
+    uint8_t lo = cpu_read(cpu, 0xFFFA);
+    uint8_t hi = cpu_read(cpu, 0xFFFB);
+    cpu->PC = (uint16_t)(hi << 8) | lo;
+
+    cpu->cycles_remaining = 8;
+}
+
+void request_nmi(_2A03CPU* cpu) { cpu->nmi_pending = true; }
+void set_irq_line(_2A03CPU* cpu, bool asserted) { cpu->irq_line = asserted; }
 
 void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value)
 {
@@ -80,15 +133,22 @@ void cpu_write(_2A03CPU* cpu, uint16_t addr, uint8_t value) {
 bool cpu_clock(_2A03CPU* cpu)
 {
     if (cpu->cycles_remaining == 0) {
-        cpu->opcode = cpu_read(cpu, cpu->PC);
-        cpu->PC++;
+        if (cpu->nmi_pending) {
+            cpu->nmi_pending = false;
+            nmi_cpu(cpu);
+        } else if (cpu->irq_line && irq_cpu(cpu)) {
+            /* serviced -- irq_cpu() already set up cycles_remaining */
+        } else {
+            cpu->opcode = cpu_read(cpu, cpu->PC);
+            cpu->PC++;
 
-        const Instruction* instr = &opcode_table[cpu->opcode];
-        cpu->cycles_remaining = instr->cycles;
+            const Instruction* instr = &opcode_table[cpu->opcode];
+            cpu->cycles_remaining = instr->cycles;
 
-        uint8_t extra_from_addr = instr->addrmode(cpu);
-        uint8_t extra_from_op = instr->operate(cpu);
-        cpu->cycles_remaining += (extra_from_addr & extra_from_op);
+            uint8_t extra_from_addr = instr->addrmode(cpu);
+            uint8_t extra_from_op = instr->operate(cpu);
+            cpu->cycles_remaining += (extra_from_addr & extra_from_op);
+        }
     }
 
     cpu->cycles_remaining--;

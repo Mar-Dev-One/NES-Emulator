@@ -39,6 +39,17 @@ typedef struct _2A03CPU
 
     memory_bus* bus;
 
+    /* Pending interrupt lines. NMI is edge-triggered: something (the
+       PPU, once it exists) calls request_nmi() once at the moment
+       vblank starts, and the CPU services it and clears the flag at
+       the next instruction boundary. IRQ is level-triggered on real
+       hardware -- multiple sources (APU frame counter, mappers) can
+       hold the line low at once -- but until those exist this is a
+       single asserted/cleared bool as a stand-in; a future multi-source
+       IRQ would OR them together before calling set_irq_line(). */
+    bool nmi_pending;
+    bool irq_line;
+
 } _2A03CPU;
 
 typedef enum CPUFlag
@@ -59,6 +70,30 @@ bool init_cpu(_2A03CPU* cpu);
 
 
 bool reset_cpu(_2A03CPU* cpu);
+
+/* Services a maskable interrupt request: pushes PC and P, sets I,
+   and jumps to the vector at $FFFE/$FFFF -- but only if FLAG_I is
+   currently clear. Returns false (does nothing) if IRQ is masked.
+   Call only at an instruction boundary (cycles_remaining == 0);
+   cpu_clock() does this automatically via irq_line. */
+bool irq_cpu(_2A03CPU* cpu);
+
+/* Services a non-maskable interrupt: same push sequence as IRQ, but
+   always runs regardless of FLAG_I, and jumps to $FFFA/$FFFB instead.
+   Call only at an instruction boundary; cpu_clock() does this
+   automatically via nmi_pending. */
+void nmi_cpu(_2A03CPU* cpu);
+
+/* Raises a one-shot NMI request. Serviced (and cleared) the next time
+   cpu_clock() is between instructions -- intended to be called once
+   per frame by the PPU at the start of vblank. */
+void request_nmi(_2A03CPU* cpu);
+
+/* Sets or clears the IRQ line. Level-triggered: leave it asserted
+   for as long as the interrupting source (APU frame IRQ, mapper IRQ)
+   wants attention; the CPU will keep re-servicing it once per
+   instruction boundary until FLAG_I is set or the source clears it. */
+void set_irq_line(_2A03CPU* cpu, bool asserted);
 
 void set_flag(_2A03CPU* cpu, CPUFlag flag, bool value);
 bool get_flag(_2A03CPU* cpu, CPUFlag flag);
