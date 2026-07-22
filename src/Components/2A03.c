@@ -20,6 +20,7 @@ bool init_cpu(_2A03CPU* cpu)
 
     cpu->nmi_pending = false;
     cpu->irq_line = false;
+    cpu->jammed = false;
 
     cpu->bus = malloc(sizeof(memory_bus));
     if (!cpu->bus)
@@ -43,6 +44,7 @@ bool reset_cpu(_2A03CPU* cpu)
 {
     cpu->nmi_pending = false;
     cpu->irq_line = false;
+    cpu->jammed = false;
 
     cpu_read(cpu, cpu->PC);                       /* cycle 1: dummy opcode fetch */
     cpu_read(cpu, cpu->PC);                       /* cycle 2: dummy operand fetch, PC not advanced */
@@ -132,6 +134,12 @@ void cpu_write(_2A03CPU* cpu, uint16_t addr, uint8_t value) {
 
 bool cpu_clock(_2A03CPU* cpu)
 {
+    /* A JAM/KIL opcode locks the bus for good on real hardware -- no
+       further instructions fetch, and even NMI/IRQ can't break it out.
+       Reflect that by simply freezing here. */
+    if (cpu->jammed)
+        return true;
+
     if (cpu->cycles_remaining == 0) {
         if (cpu->nmi_pending) {
             cpu->nmi_pending = false;

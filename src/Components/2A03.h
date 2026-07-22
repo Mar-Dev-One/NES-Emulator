@@ -50,6 +50,12 @@ typedef struct _2A03CPU
     bool nmi_pending;
     bool irq_line;
 
+    /* Set by one of the 12 JAM/KIL illegal opcodes ($02,$12,$22,$32,
+       $42,$52,$62,$72,$92,$B2,$D2,$F2). Real hardware locks the bus
+       permanently and only a physical reset recovers; cpu_clock()
+       checks this and stops stepping once it's set. */
+    bool jammed;
+
 } _2A03CPU;
 
 typedef enum CPUFlag
